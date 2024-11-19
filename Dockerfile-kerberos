@@ -1,0 +1,45 @@
+# Funcionando
+
+# Usa una imagen base de Red Hat
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+# Establecer el usuario como root
+USER root
+
+RUN sed -i 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/product-id.conf
+RUN sed -i 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/subscription-manager.conf
+
+# Actualiza el sistema e instala las herramientas necesarias
+# Instala las herramientas necesarias, soporte para Kerberos y libzstd-devel
+RUN yum install -y python3 python3-pip python3-devel gcc make cyrus-sasl-gssapi krb5-workstation
+
+# Agrega el repositorio de Confluent sin solicitar el archivo archive.key
+RUN echo "[Confluent-Clients]" > /etc/yum.repos.d/confluent.repo && \
+    echo "name=Confluent Clients repository" >> /etc/yum.repos.d/confluent.repo && \
+    echo "baseurl=https://packages.confluent.io/clients/rpm/centos/9/x86_64/" >> /etc/yum.repos.d/confluent.repo && \
+    echo "gpgcheck=0" >> /etc/yum.repos.d/confluent.repo && \
+    echo "enabled=1" >> /etc/yum.repos.d/confluent.repo
+
+# Descargar e instalar el paquete libzstd-devel desde la URL proporcionada
+RUN curl -LO https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libzstd-devel-1.5.1-2.el9.x86_64.rpm && \
+    yum localinstall -y libzstd-devel-1.5.1-2.el9.x86_64.rpm && \
+    rm -f libzstd-devel-1.5.1-2.el9.x86_64.rpm
+
+RUN yum install -y librdkafka-devel
+
+
+# Instala confluent-kafka-python como el usuario estándar
+RUN python3 -m pip install --no-binary confluent-kafka confluent_kafka
+
+# Verifica que confluent_kafka está instalado
+RUN python3 -c 'import confluent_kafka; print(confluent_kafka.version())'
+
+COPY client-kafka-kerberos.py /home/
+COPY ./keytabs/keytabs/jopeco.keytab /home/keytabs/
+
+
+# Cambia a un usuario no root (opcional)
+# USER <nombre_de_usuario>
+
+# Comando por defecto al ejecutar el contenedor (puedes cambiarlo según sea necesario)
+CMD ["python3"]
