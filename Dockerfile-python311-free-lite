@@ -5,6 +5,7 @@ FROM registry.access.redhat.com/ubi9/ubi:latest
 RUN dnf update -y && \
     dnf install -y \
     gcc \
+    gcc-c++ \
     make \
     wget \
     git \
