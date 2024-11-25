@@ -1,0 +1,43 @@
+# Usar la imagen base UBI9
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+# Instalar herramientas necesarias
+RUN dnf update -y && \
+    dnf install -y \
+    gcc \
+    make \
+    wget \
+    git \
+    libffi-devel \
+    zlib-devel \
+    bzip2-devel \
+    xz \
+    openssl-devel \
+    tar \
+    patch \
+    && dnf clean all  # Limpiar la caché de dnf para reducir el tamaño de la imagen
+
+# Descargar y compilar Python 3.13 desde la fuente
+RUN cd /usr/src && \
+    wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tar.xz && \
+    tar -xf Python-3.13.0.tar.xz && \
+    cd Python-3.13.0 && \
+    ./configure --enable-optimizations --with-ensurepip=install --disable-gil && \
+    make altinstall && \
+    rm -f /usr/src/Python-3.13.0.tar.xz
+
+# Eliminar el enlace simbólico existente para python3 y crear el nuevo
+RUN rm -f /usr/bin/python3 && \
+    ln -s /usr/local/bin/python3.13 /usr/bin/python3
+
+# Instalar pip
+RUN python3.13 -m ensurepip
+
+# Crear un directorio de trabajo
+WORKDIR /app
+
+# Copiar el script de verificación (si tienes el script check_gil.py)
+COPY check_gil.py .
+
+# Establecer el punto de entrada
+CMD ["python3.13", "check_gil.py"]
