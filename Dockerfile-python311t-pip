@@ -17,6 +17,15 @@ RUN dnf update -y && \
     patch \
     && dnf clean all  # Limpiar la caché de dnf para reducir el tamaño de la imagen
 
+# Instalar Rust usando rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    echo "export PATH=$PATH:/root/.cargo/bin" >> /etc/profile.d/rust.sh && \
+    source /etc/profile.d/rust.sh && \
+    rustc --version  # Verificar que Rust está instalado correctamente
+
+# Establecer PATH para Rust (esto asegura que esté disponible en futuras capas)
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 # Descargar y compilar Python 3.13 desde la fuente
 RUN cd /usr/src && \
     wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tar.xz && \
@@ -40,6 +49,10 @@ WORKDIR /app
 
 # Copiar el script de verificación (si tienes el script check_gil.py)
 COPY check_gil.py .
+
+# Establecer el punto de entrada y mostrar la versión de pip
+CMD python3.13 -m pip --version && python3.13 check_gil.py
+
 
 # Establecer el punto de entrada y mostrar la versión de pip
 CMD python3.13 -m pip --version && python3.13 check_gil.py
