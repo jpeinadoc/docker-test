@@ -41,6 +41,6 @@ WORKDIR /app
 # Copiar el script de verificación (si tienes el script check_gil.py)
 COPY check_gil.py .
 
-# Establecer el punto de entrada
-CMD ["python3.13", "check_gil.py"]
+# Establecer el punto de entrada y mostrar la versión de pip
+CMD python3.13 -m pip --version && python3.13 check_gil.py
 
